@@ -55,18 +55,28 @@ jobs:
   # Job 2: Build Java Payment Service (when it exists)
   java-build:
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('src/Services/PaymentService.Java/**') != '' }}
 
     steps:
     - uses: actions/checkout@v4
 
+    - name: Check if Java service exists
+      id: check-java
+      run: |
+        if [ -d "src/Services/PaymentService.Java" ] && [ -f "src/Services/PaymentService.Java/pom.xml" ]; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+        fi
+
     - name: Set up JDK
+      if: steps.check-java.outputs.exists == 'true'
       uses: actions/setup-java@v3
       with:
         java-version: ${{ env.JAVA_VERSION }}
         distribution: 'temurin'
 
     - name: Cache Maven dependencies
+      if: steps.check-java.outputs.exists == 'true'
       uses: actions/cache@v3
       with:
         path: ~/.m2
@@ -74,11 +84,13 @@ jobs:
         restore-keys: ${{ runner.os }}-m2
 
     - name: Build with Maven
+      if: steps.check-java.outputs.exists == 'true'
       run: |
         cd src/Services/PaymentService.Java
         mvn clean compile test package
 
     - name: Upload Java artifacts
+      if: steps.check-java.outputs.exists == 'true'
       uses: actions/upload-artifact@v3
       with:
         name: java-artifacts
@@ -87,12 +99,21 @@ jobs:
   # Job 3: Build Node.js Notification Service (when it exists)
   nodejs-build:
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('src/Services/NotificationService.Node/**') != '' }}
 
     steps:
     - uses: actions/checkout@v4
 
+    - name: Check if Node.js service exists
+      id: check-nodejs
+      run: |
+        if [ -d "src/Services/NotificationService.Node" ] && [ -f "src/Services/NotificationService.Node/package.json" ]; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+        fi
+
     - name: Setup Node.js
+      if: steps.check-nodejs.outputs.exists == 'true'
       uses: actions/setup-node@v3
       with:
         node-version: ${{ env.NODE_VERSION }}
@@ -100,16 +121,19 @@ jobs:
         cache-dependency-path: src/Services/NotificationService.Node/package-lock.json
 
     - name: Install dependencies
+      if: steps.check-nodejs.outputs.exists == 'true'
       run: |
         cd src/Services/NotificationService.Node
         npm ci
 
     - name: Run tests
+      if: steps.check-nodejs.outputs.exists == 'true'
       run: |
         cd src/Services/NotificationService.Node
         npm test
 
     - name: Build
+      if: steps.check-nodejs.outputs.exists == 'true'
       run: |
         cd src/Services/NotificationService.Node
         npm run build

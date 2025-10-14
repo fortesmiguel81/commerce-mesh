@@ -43,24 +43,35 @@ jobs:
   # Java Dependencies (when Payment Service exists)
   java-dependencies:
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('src/Services/PaymentService.Java/pom.xml') != '' }}
 
     steps:
     - uses: actions/checkout@v4
 
+    - name: Check if Java service exists
+      id: check-java
+      run: |
+        if [ -d "src/Services/PaymentService.Java" ] && [ -f "src/Services/PaymentService.Java/pom.xml" ]; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+        fi
+
     - name: Set up JDK
+      if: steps.check-java.outputs.exists == 'true'
       uses: actions/setup-java@v3
       with:
         java-version: '17'
         distribution: 'temurin'
 
     - name: Update Maven dependencies
+      if: steps.check-java.outputs.exists == 'true'
       run: |
         cd src/Services/PaymentService.Java
         mvn versions:display-dependency-updates
         mvn versions:use-latest-versions -DallowMajorUpdates=false
 
     - name: Create Pull Request
+      if: steps.check-java.outputs.exists == 'true'
       uses: peter-evans/create-pull-request@v5
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
@@ -76,23 +87,34 @@ jobs:
   # Node.js Dependencies (when Notification Service exists)
   nodejs-dependencies:
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('src/Services/NotificationService.Node/package.json') != '' }}
 
     steps:
     - uses: actions/checkout@v4
 
+    - name: Check if Node.js service exists
+      id: check-nodejs
+      run: |
+        if [ -d "src/Services/NotificationService.Node" ] && [ -f "src/Services/NotificationService.Node/package.json" ]; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+        fi
+
     - name: Setup Node.js
+      if: steps.check-nodejs.outputs.exists == 'true'
       uses: actions/setup-node@v3
       with:
         node-version: '18.x'
 
     - name: Update npm dependencies
+      if: steps.check-nodejs.outputs.exists == 'true'
       run: |
         cd src/Services/NotificationService.Node
         npm update
         npm audit fix
 
     - name: Create Pull Request
+      if: steps.check-nodejs.outputs.exists == 'true'
       uses: peter-evans/create-pull-request@v5
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
