@@ -1,0 +1,106 @@
+name: Dependency Updates
+
+on:
+  schedule:
+    # Run weekly on Mondays at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+jobs:
+  # .NET Dependencies
+  dotnet-dependencies:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Update .NET packages
+      run: |
+        # List outdated packages
+        dotnet list package --outdated --include-transitive > outdated-packages.log
+        
+        # Auto-update minor and patch versions
+        dotnet add package --prerelease --source https://api.nuget.org/v3/index.json || true
+
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: 'chore: update .NET dependencies'
+        title: 'chore: Update .NET Dependencies'
+        body: |
+          Automated dependency update for .NET packages.
+          
+          Please review the changes and ensure all tests pass.
+        branch: dependencies/dotnet-updates
+        delete-branch: true
+
+  # Java Dependencies (when Payment Service exists)
+  java-dependencies:
+    runs-on: ubuntu-latest
+    if: hashFiles('src/Services/PaymentService.Java/pom.xml') != ''
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up JDK
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Update Maven dependencies
+      run: |
+        cd src/Services/PaymentService.Java
+        mvn versions:display-dependency-updates
+        mvn versions:use-latest-versions -DallowMajorUpdates=false
+
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: 'chore: update Java dependencies'
+        title: 'chore: Update Java Dependencies'
+        body: |
+          Automated dependency update for Java/Maven packages.
+          
+          Please review the changes and ensure all tests pass.
+        branch: dependencies/java-updates
+        delete-branch: true
+
+  # Node.js Dependencies (when Notification Service exists)
+  nodejs-dependencies:
+    runs-on: ubuntu-latest
+    if: hashFiles('src/Services/NotificationService.Node/package.json') != ''
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+
+    - name: Update npm dependencies
+      run: |
+        cd src/Services/NotificationService.Node
+        npm update
+        npm audit fix
+
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: 'chore: update Node.js dependencies'
+        title: 'chore: Update Node.js Dependencies'
+        body: |
+          Automated dependency update for Node.js packages.
+          
+          Please review the changes and ensure all tests pass.
+        branch: dependencies/nodejs-updates
+        delete-branch: true
