@@ -43,7 +43,7 @@ jobs:
   # Java Dependencies (when Payment Service exists)
   java-dependencies:
     runs-on: ubuntu-latest
-    if: hashFiles('src/Services/PaymentService.Java/pom.xml') != ''
+    if: ${{ hashFiles('src/Services/PaymentService.Java/pom.xml') != '' }}
 
     steps:
     - uses: actions/checkout@v4
@@ -76,7 +76,7 @@ jobs:
   # Node.js Dependencies (when Notification Service exists)
   nodejs-dependencies:
     runs-on: ubuntu-latest
-    if: hashFiles('src/Services/NotificationService.Node/package.json') != ''
+    if: ${{ hashFiles('src/Services/NotificationService.Node/package.json') != '' }}
 
     steps:
     - uses: actions/checkout@v4

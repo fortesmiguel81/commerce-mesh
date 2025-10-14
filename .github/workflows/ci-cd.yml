@@ -55,7 +55,7 @@ jobs:
   # Job 2: Build Java Payment Service (when it exists)
   java-build:
     runs-on: ubuntu-latest
-    if: hashFiles('src/Services/PaymentService.Java/**') != ''
+    if: ${{ hashFiles('src/Services/PaymentService.Java/**') != '' }}
 
     steps:
     - uses: actions/checkout@v4
@@ -87,7 +87,7 @@ jobs:
   # Job 3: Build Node.js Notification Service (when it exists)
   nodejs-build:
     runs-on: ubuntu-latest
-    if: hashFiles('src/Services/NotificationService.Node/**') != ''
+    if: ${{ hashFiles('src/Services/NotificationService.Node/**') != '' }}
 
     steps:
     - uses: actions/checkout@v4
