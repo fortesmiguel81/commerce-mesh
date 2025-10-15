@@ -12,6 +12,8 @@
 
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting.AppHost" Version="9.4.0" />
+    <!-- Use PackageReference with specific version to override vulnerable transitive dependency -->
+    <PackageReference Include="KubernetesClient" Version="17.0.14" />
   </ItemGroup>
 
   <ItemGroup>
