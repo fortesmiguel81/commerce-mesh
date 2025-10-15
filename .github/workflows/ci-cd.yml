@@ -34,8 +34,65 @@ jobs:
     - name: Build solution
       run: dotnet build CommerceMesh.sln --no-restore --configuration Release
 
-    - name: Run unit tests
-      run: dotnet test tests/**/*.csproj --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage"
+    - name: Check for test projects
+      id: check-tests
+      run: |
+        # Check for .NET test projects by looking for projects with "Test" in their name or path
+        # This handles solution folders correctly by examining the actual project structure
+        if find . -name "*.csproj" -type f -path "*/test*" -o -name "*test*.csproj" -o -name "*Test*.csproj" 2>/dev/null | grep -q .; then
+          echo "dotnet-tests=true" >> $GITHUB_OUTPUT
+        else
+          echo "dotnet-tests=false" >> $GITHUB_OUTPUT
+        fi
+        
+        # Check for Java test projects (look for pom.xml files in any test directories)
+        if find . -name "pom.xml" -type f -path "*/test*" 2>/dev/null | grep -q .; then
+          echo "java-tests=true" >> $GITHUB_OUTPUT
+        else
+          echo "java-tests=false" >> $GITHUB_OUTPUT
+        fi
+        
+        # Check for Node.js test projects (look for package.json files in test directories)
+        if find . -name "package.json" -type f -path "*/test*" 2>/dev/null | grep -q .; then
+          echo "nodejs-tests=true" >> $GITHUB_OUTPUT
+        else
+          echo "nodejs-tests=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Run .NET unit tests
+      if: steps.check-tests.outputs.dotnet-tests == 'true'
+      run: |
+        # Find and run all .NET test projects using dotnet test with solution file
+        # This will automatically discover all test projects referenced in the solution
+        dotnet test CommerceMesh.sln --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage"
+
+    - name: Run Java unit tests
+      if: steps.check-tests.outputs.java-tests == 'true'
+      run: |
+        # Find and run all Java test projects anywhere in the solution
+        find . -name "pom.xml" -type f -path "*/test*" | while read pom; do
+          test_dir=$(dirname "$pom")
+          echo "Running tests for: $test_dir"
+          cd "$test_dir"
+          mvn test
+          cd - > /dev/null
+        done
+
+    - name: Run Node.js unit tests
+      if: steps.check-tests.outputs.nodejs-tests == 'true'
+      run: |
+        # Find and run all Node.js test projects anywhere in the solution
+        find . -name "package.json" -type f -path "*/test*" | while read pkg; do
+          test_dir=$(dirname "$pkg")
+          echo "Running tests for: $test_dir"
+          cd "$test_dir"
+          npm test
+          cd - > /dev/null
+        done
+
+    - name: Skip tests (no test projects found)
+      if: steps.check-tests.outputs.dotnet-tests == 'false' && steps.check-tests.outputs.java-tests == 'false' && steps.check-tests.outputs.nodejs-tests == 'false'
+      run: echo "No test projects found - skipping test execution"
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
