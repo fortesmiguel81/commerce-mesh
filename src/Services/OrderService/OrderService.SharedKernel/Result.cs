@@ -6,13 +6,17 @@ public class Result
 {
     public Result(bool isSuccess, Error error)
     {
-        if (!isSuccess || error == Error.None || !(isSuccess || error != Error.None))
+        switch (isSuccess)
         {
-            throw new ArgumentException("Invalid error", nameof(error));
+            case true when error != Error.None:
+                throw new ArgumentException("Invalid error: Success result cannot have an error", nameof(error));
+            case false when error == Error.None:
+                throw new ArgumentException("Invalid error: Failure result must have a valid error", nameof(error));
+            default:
+                IsSuccess = isSuccess;
+                Error = error;
+                break;
         }
-
-        IsSuccess = isSuccess;
-        Error = error;
     }
 
     public bool IsSuccess { get; }

@@ -1,10 +1,12 @@
 using System.Reflection;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.EntityFrameworkCore;
 using OrderService.Api;
 using OrderService.Api.Extensions;
 using OrderService.Application;
 using OrderService.Infrastructure;
+using OrderService.Infrastructure.Database;
 using ServiceDefaults;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -31,7 +33,7 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwaggerWithUi();
 
-    // Here's where you cann apply migrations at startup
+    app.ApplyMigrations();
 }
 
 app.MapHealthChecks("health", new HealthCheckOptions
